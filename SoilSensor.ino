@@ -3,6 +3,7 @@
 
   05 Oct 2016 SeJ 
   16 Oct 2016 SeJ update to add timed watering
+  07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
 
   using digital / analog soil sensor and outputing level to five digital leds
   sends the value to console
@@ -30,15 +31,15 @@ int recentWater = false;    // flag for recent water
 int watercount = 0;         // number of times watered during wateringcyle
 int overWater = false;      // flag for overwatering within watercyle
 int flash = false;          // flag for flashing error light
+int hysteresis = false;     // flag for hysteresis watering
 
 unsigned long prevWater = 0;        // previous watering timestamp
 unsigned long waterMillis = 0;      // timestamp for watering
 unsigned long flashMillis = 0;      // timestamp for led flash
-const int maxcount = 6;             // max watering in wateringcycle
-//const long interval = 600000;       // watering interval
-//const long wateringcycle = 3600000; // wateringcylce duration
+const int maxcount = 28;            // max watering in wateringcycle
+const int watertime = 7000;         // watering time
 const long interval = 60000;       // watering interval
-const long wateringcycle = 360000; // wateringcylce duration
+const long wateringcycle = 1800000; // wateringcylce duration
 
 void setup() {
   Serial.begin(9600);         // init serial communications at 9600 bps
@@ -85,11 +86,17 @@ void loop() {
       Serial.println("!!!OverWatering!!!!");
     }
   
-    if (sensorMapValue <20  && recentWater == false) {
-      Serial.println("Watering...");
+    if ((sensorMapValue <40 || hysteresis == true)  && recentWater == false) {
+      Serial.print("Watering...");
+      if (sensorMapValue < 60)
+        hysteresis = true;
+      else
+        hysteresis = false;
+      Serial.print("hysteresis = ");
+      Serial.println(hysteresis);
       // turn valve on as soil is dry:
       digitalWrite(valveOut, HIGH);
-      delay(7000);
+      delay(watertime);
       digitalWrite(valveOut, LOW);
       Serial.println("Done Watering.");
       recentWater = true;
@@ -116,7 +123,7 @@ void loop() {
 void SensorRead() {  
   soilState = digitalRead(soilPin);
   sensorRawValue = analogRead(analogInPin);  // read analog soil value
-  sensorMapValue = map(sensorRawValue, 200, 1023, 100, 0);  // normalise
+  sensorMapValue = map(sensorRawValue, 0, 1023, 100, 0);  // normalise
 }
 
 

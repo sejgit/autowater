@@ -1,14 +1,14 @@
 /*
   SoilSensor and Watering Valve
 
-  05 Oct 2016 SeJ 
+  05 Oct 2016 SeJ
   16 Oct 2016 SeJ update to add timed watering
   07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
 
   using digital / analog soil sensor and outputing level to five digital leds
   sends the value to console
   Valve operation have somee safeguards to not over water.
-  
+
   todo:
   Will perhaps add a level sensor for the filling water tank.
 
@@ -41,6 +41,10 @@ const int watertime = 7000;         // watering time
 const long interval = 60000;       // watering interval
 const long wateringcycle = 1800000; // wateringcylce duration
 
+void SensorRead();
+void SerialOutput();
+void LedOutput(unsigned long currentMillis);
+
 void setup() {
   Serial.begin(9600);         // init serial communications at 9600 bps
   pinMode(valveOut, OUTPUT);  // init valve
@@ -50,14 +54,14 @@ void setup() {
   pinMode(ledG3, OUTPUT);
   pinMode(ledYel, OUTPUT);
   pinMode(ledRed, OUTPUT);
-  
+
   watercount = 0;  // reset watercount
   overWater = false;  // reset overWatering
 
   SensorRead();
   SerialOutput();
   LedOutput(0);
-  
+
 }
 
 
@@ -67,7 +71,7 @@ void loop() {
 
   SensorRead();
   LedOutput(currentMillis);
-  
+
   if (currentMillis - prevWater >= interval) {
     prevWater = currentMillis;
     recentWater = false;
@@ -75,17 +79,17 @@ void loop() {
   }
 
   if (overWater == false) {
-    
-    if (currentMillis - waterMillis >= wateringcycle) {  
+
+    if (currentMillis - waterMillis >= wateringcycle) {
       watercount = 0;
-      waterMillis = currentMillis;  
+      waterMillis = currentMillis;
     }
 
     if (watercount >= maxcount) {
       overWater = true;
       Serial.println("!!!OverWatering!!!!");
     }
-  
+
     if ((sensorMapValue <40 || hysteresis == true)  && recentWater == false) {
       Serial.print("Watering...");
       if (sensorMapValue < 60)
@@ -109,7 +113,7 @@ void loop() {
       // failsafe turn off valve as soil is wet:
       digitalWrite(valveOut, LOW);
     }
-    
+
   }
 
 
@@ -120,7 +124,7 @@ void loop() {
 }
 
 
-void SensorRead() {  
+void SensorRead() {
   soilState = digitalRead(soilPin);
   sensorRawValue = analogRead(analogInPin);  // read analog soil value
   sensorMapValue = map(sensorRawValue, 0, 1023, 100, 0);  // normalise

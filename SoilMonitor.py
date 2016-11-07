@@ -7,6 +7,16 @@
 import serial
 ser = serial.Serial('/dev/ttyACM0', 9600)
 
+
 while True :
-    ser.readline()
+    lineIn = ser.readline()
+    print(lineIn)
+    try:
+        with open('SoilData.log', 'a') as f:
+            f.write(lineIn)
+    except IOError:
+        print('IOError')
+
+    
+    
 

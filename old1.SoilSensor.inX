@@ -4,7 +4,6 @@
   05 Oct 2016 SeJ
   16 Oct 2016 SeJ update to add timed watering
   07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
-  08 Nov 2016 SeJ/CsJ update to change error mode to self-reset
 
   using digital / analog soil sensor and outputing level to five digital leds
   sends the value to console
@@ -27,7 +26,6 @@ const int ledRed = 2;
 
 int sensorRawValue = 0;     // value read from the pot
 int sensorMapValue = 0;     // value normalised
-int sensorMapValue_old = 0; // output everytime mapvalue changes
 int soilState = 0;          // variable for reading the digital soil status
 int recentWater = false;    // flag for recent water
 int watercount = 0;         // number of times watered during wateringcyle
@@ -35,19 +33,13 @@ int overWater = false;      // flag for overwatering within watercyle
 int flash = false;          // flag for flashing error light
 int hysteresis = false;     // flag for hysteresis watering
 
-
 unsigned long prevWater = 0;        // previous watering timestamp
 unsigned long waterMillis = 0;      // timestamp for watering
 unsigned long flashMillis = 0;      // timestamp for led flash
-unsigned long errorMillis = 0;      // timestamp to reset overwater condition
-
-const int hysLow = 40;         // hysteresis low
-const int hysHigh = 60;       // hysteresis high
-const int maxcount = 15;       // max watering in wateringcycle
-//                          m *  s * mil
-const int watertime      =       7 * 1000; // 7s watering time
-const long interval      =  2 * 60 * 1000; // 2min watering interval
-const long wateringcycle = 60 * 60 * 1000; // 1hr wateringcylce duration
+const int maxcount = 28;            // max watering in wateringcycle
+const int watertime = 7000;         // watering time
+const long interval = 60000;       // watering interval
+const long wateringcycle = 1800000; // wateringcylce duration
 
 void SensorRead();
 void SerialOutput();
@@ -80,11 +72,6 @@ void loop() {
   SensorRead();
   LedOutput(currentMillis);
 
-  if (sensorMapValue != sensorMapValue_old) {
-    sensorMapValue_old = sensorMapValue;
-    SerialOutput();
-  }
-
   if (currentMillis - prevWater >= interval) {
     prevWater = currentMillis;
     recentWater = false;
@@ -100,13 +87,12 @@ void loop() {
 
     if (watercount >= maxcount) {
       overWater = true;
-      errorMillis = currentMillis;
       Serial.println("!!!OverWatering!!!!");
     }
 
-    if ((sensorMapValue < hysLow || hysteresis == true)  && recentWater == false) {
+    if ((sensorMapValue <40 || hysteresis == true)  && recentWater == false) {
       Serial.print("Watering...");
-      if (sensorMapValue < hysHigh)
+      if (sensorMapValue < 60)
         hysteresis = true;
       else
         hysteresis = false;
@@ -128,11 +114,8 @@ void loop() {
       digitalWrite(valveOut, LOW);
     }
 
-  } else {
-    if (currentMillis - errorMillis >= wateringcycle) {
-      overwater = false;
-    }
   }
+
 
   // wait 2 milliseconds before the next loop
   // for the analog-to-digital converter to settle

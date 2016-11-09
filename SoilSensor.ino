@@ -45,16 +45,16 @@ const int hysLow = 40;         // hysteresis low
 const int hysHigh = 60;       // hysteresis high
 const int maxcount = 15;       // max watering in wateringcycle
 //                          m *  s * mil
-const int watertime      =       7 * 1000; // 7s watering time
-const long interval      =  2 * 60 * 1000; // 2min watering interval
-const long wateringcycle = 60 * 60 * 1000; // 1hr wateringcylce duration
+const int watertime      =  7000;  //  7 * 1000 =  7s watering time
+const long interval      =  120000; // 2 * 60 * 1000 = 2min watering interval
+const long wateringcycle = 3600000; //60 * 60 * 1000 = 1hr wateringcylce duration
 
 void SensorRead();
 void SerialOutput();
 void LedOutput(unsigned long currentMillis);
 
 void setup() {
-  Serial.begin(9600);         // init serial communications at 9600 bps
+  Serial.begin(115200);         // init serial communications at 9600 bps
   pinMode(valveOut, OUTPUT);  // init valve
   pinMode(soilPin, INPUT);    // init soil sensor output
   pinMode(ledG1, OUTPUT);     // init indicator leds
@@ -121,7 +121,7 @@ void loop() {
       watercount++;
       Serial.println(watercount);
       if (watercount <= 1) {
-        unsigned long waterMillis = currentMillis;
+        waterMillis = currentMillis;
       }
     } else {
       // failsafe turn off valve as soil is wet:
@@ -130,7 +130,7 @@ void loop() {
 
   } else {
     if (currentMillis - errorMillis >= wateringcycle) {
-      overwater = false;
+      overWater = false;
     }
   }
 

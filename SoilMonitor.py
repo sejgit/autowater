@@ -5,7 +5,7 @@
 # sej 2016 11 07
 
 import serial
-ser = serial.Serial('/dev/ttyACM0', 9600)
+ser = serial.Serial('/dev/ttyACM0', 115200)
 
 
 while True :
@@ -16,7 +16,4 @@ while True :
             f.write(lineIn)
     except IOError:
         print('IOError')
-
-    
-    
 

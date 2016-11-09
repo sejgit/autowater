@@ -40,12 +40,14 @@ unsigned long prevWater = 0;        // previous watering timestamp
 unsigned long waterMillis = 0;      // timestamp for watering
 unsigned long flashMillis = 0;      // timestamp for led flash
 unsigned long errorMillis = 0;      // timestamp to reset overwater condition
+unsigned long outputMillis = 0;     // timestamp to throttle data output
 
 const int hysLow = 40;         // hysteresis low
 const int hysHigh = 60;       // hysteresis high
 const int maxcount = 15;       // max watering in wateringcycle
 //                          m *  s * mil
-const int watertime      =  7000;  //  7 * 1000 =  7s watering time
+const int heartbeat      = 1000;    // blink timing & delay to not flood data output
+const int watertime      =  7000;   //  7 * 1000 =  7s watering time
 const long interval      =  120000; // 2 * 60 * 1000 = 2min watering interval
 const long wateringcycle = 3600000; //60 * 60 * 1000 = 1hr wateringcylce duration
 
@@ -80,7 +82,8 @@ void loop() {
   SensorRead();
   LedOutput(currentMillis);
 
-  if (sensorMapValue != sensorMapValue_old) {
+  if ((sensorMapValue != sensorMapValue_old) && (currentMillis - outputMillis >= heartbeat)) {
+    outputMillis = currentMillis;
     sensorMapValue_old = sensorMapValue;
     SerialOutput();
   }
@@ -166,7 +169,7 @@ void SerialOutput() {
 
 void LedOutput(unsigned long currentMillis) {
   if (overWater == true) {
-    if (currentMillis - flashMillis >= 1000) {
+    if (currentMillis - flashMillis >= heartbeat) {
       flashMillis = currentMillis;
       if(flash == true) {
         digitalWrite(ledG1, HIGH);

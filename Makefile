@@ -4,6 +4,11 @@
 ### to https://github.com/sudar/Arduino-Makefile/blob/master/arduino-mk-vars.md
 ### Original project where this Makefile comes from: https://github.com/WeAreLeka/Bare-Arduino-Project
 
+### AVRDDUDE
+### Path to avrdude directory.
+AVRDDUDE          = /usr/bin/avrdude
+AVRDUDE_CONF= /usr/share/arduino/hardware/tools/avrdude.conf
+
 ### PROJECT_DIR
 ### This is the path to where you have created/cloned your project
 PROJECT_DIR       = /home/pi/autowater
@@ -27,7 +32,7 @@ BOARD_TAG         = uno
 
 ### MONITOR_BAUDRATE
 ### It must be set to Serial baudrate value you are using.
-MONITOR_BAUDRATE  = 9600
+MONITOR_BAUDRATE  = 115200
 
 ### AVR_TOOLS_DIR
 ### Path to the AVR tools directory such as avr-gcc, avr-g++, etc.
@@ -53,7 +58,7 @@ CXXFLAGS         += -pedantic -Wall -Wextra
 
 ### MONITOR_PORT
 ### The port your board is connected to. Using an '*' tries all the ports and finds the right one.
-MONITOR_PORT      = /dev/tty.usbmodem*
+MONITOR_PORT      = /dev/ttyACM0
 
 ### CURRENT_DIR
 ### Do not touch - used for binaries path

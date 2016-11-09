@@ -7,7 +7,7 @@
 
 import serial
 import datetime
-
+from os.path import expanduser
 
 ser = serial.Serial('/dev/ttyACM0', 115200)
 
@@ -16,7 +16,8 @@ while True :
     d = '{:%m-%d %H:%M:%S}  '.format(datetime.datetime.now())
     print(d + lineIn).rstrip('\n')
     try:
-        with open('~/autowater/SoilData.log', 'a') as f:
+        path = expanduser("~/autowater/SoilData.log")
+        with open(path , 'a') as f:
             f.write(d + lineIn)
     except IOError:
         print('IOError')

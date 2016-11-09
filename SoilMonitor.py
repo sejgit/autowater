@@ -16,7 +16,7 @@ while True :
     d = '{:%m-%d %H:%M:%S}  '.format(datetime.datetime.now())
     print(d + lineIn).rstrip('\n')
     try:
-        with open('SoilData.log', 'a') as f:
+        with open('~/autowater/SoilData.log', 'a') as f:
             f.write(d + lineIn)
     except IOError:
         print('IOError')

@@ -3,11 +3,13 @@
 # SoilMonitor.py
 
 # sej 2016 11 07
-# sej 2016 11 09 add datetime
+# sej 2016 11 09 add datetime & sleep
+
 
 import serial
 import datetime
 from os.path import expanduser
+from time import sleep
 
 ser = serial.Serial('/dev/ttyACM0', 115200)
 
@@ -21,4 +23,5 @@ while True :
             f.write(d + lineIn)
     except IOError:
         print('IOError')
+    sleep(1)
 

@@ -44,7 +44,7 @@ unsigned long outputMillis = 0;     // timestamp to throttle data output
 
 const int hysLow = 40;         // hysteresis low
 const int hysHigh = 60;       // hysteresis high
-const int maxcount = 15;       // max watering in wateringcycle
+const int maxcount = 5;       // max watering in wateringcycle
 //                          m *  s * mil
 const int heartbeat      = 1000;    // blink timing & delay to not flood data output
 const int watertime      =  7000;   //  7 * 1000 =  7s watering time

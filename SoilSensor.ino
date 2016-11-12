@@ -134,7 +134,31 @@ void loop() {
   } else {
     if (currentMillis - errorMillis >= wateringcycle) {
       overWater = false;
-    }
+      /*
+       * PIR sensor tester
+       */
+
+      int ledPin = 13;                // choose the pin for the LED
+      int inputPin = 2;               // choose the input pin (for PIR sensor)
+      int pirState = LOW;             // we start, assuming no motion detected
+      int val = 0;                    // variable for reading the pin status
+
+      void setup() {
+        pinMode(ledPin, OUTPUT);      // declare LED as output
+        pinMode(inputPin, INPUT);     // declare sensor as input
+
+        Serial.begin(9600);
+      }
+
+      void loop(){
+        val = digitalRead(inputPin);  // read input value
+        if (val == HIGH) {            // check if the input is HIGH
+	  digitalWrite(ledPin, HIGH);  // turn LED ON
+	  if (pirState == LOW) {
+	    // we have just turned on
+	    Serial.println("Motion detected!");
+	    // We only want to print on the output change, not state
+	  }
   }
 
   // wait 2 milliseconds before the next loop
@@ -153,17 +177,18 @@ void SensorRead() {
 
 void SerialOutput() {
   // print the results to the serial monitor:
-  Serial.print("sensor = ");
+  Serial.print("raw: ");
   Serial.print(sensorRawValue);
-  Serial.print("\t output = ");
+  Serial.print("  map: ");
   Serial.print(sensorMapValue);
-  Serial.print("\t digital output = ");
+  Serial.print("  dig:");
   Serial.print(soilState);
-  Serial.print("\t watercount = ");
-  Serial.println(watercount);
   if (overWater == true) {
-    Serial.print("!!OverWater Flag is true!!");
+    Serial.print("  xWatered!!: ");
+  } else {
+    Serial.print("  xWatered  : ");
   }
+  Serial.println(watercount);
 }
 
 

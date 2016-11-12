@@ -160,9 +160,9 @@ void SerialOutput() {
   Serial.print("  dig:");
   Serial.print(soilState);
   if (overWater == true) {
-    Serial.print("  xWatered!!: ");
+    Serial.print("  xWat(!nok!: ");
   } else {
-    Serial.print("  xWatered  : ");
+    Serial.print("  xWat(.ok.): ");
   }
   Serial.println(watercount);
 }

@@ -28,6 +28,7 @@ const int ledRed = 2;
 int sensorRawValue = 0;     // value read from the pot
 int sensorMapValue = 0;     // value normalised
 int sensorMapValue_old = 0; // output everytime mapvalue changes
+int sensorMapValue_old2 = 0;// reduce flip-flop in datafile
 int soilState = 0;          // variable for reading the digital soil status
 int recentWater = false;    // flag for recent water
 int watercount = 0;         // number of times watered during wateringcyle
@@ -54,6 +55,7 @@ const long wateringcycle = 3600000; //60 * 60 * 1000 = 1hr wateringcylce duratio
 void SensorRead();
 void SerialOutput();
 void LedOutput(unsigned long currentMillis);
+void HysteresisCheck();
 
 void setup() {
   Serial.begin(115200);         // init serial communications at 9600 bps
@@ -81,9 +83,11 @@ void loop() {
 
   SensorRead();
   LedOutput(currentMillis);
+  HysteresisCheck();
 
-  if ((sensorMapValue != sensorMapValue_old) && (currentMillis - outputMillis >= heartbeat)) {
+  if ((sensorMapValue != sensorMapValue_old) && (sensorMapValue != sensorMapValue_old2) && (currentMillis - outputMillis >= heartbeat)) {
     outputMillis = currentMillis;
+    sensorMapValue_old2 = sensorMapValue_old;
     sensorMapValue_old = sensorMapValue;
     SerialOutput();
   }
@@ -94,27 +98,20 @@ void loop() {
     SerialOutput();
   }
 
-  if (overWater == false) {
+  if (watercount >= maxcount) {
+    overWater = true;
+    errorMillis = currentMillis;
+    Serial.println("!!!OverWatering!!!!");
+  }
 
+  if (overWater == false) {
     if (currentMillis - waterMillis >= wateringcycle) {
       watercount = 0;
       waterMillis = currentMillis;
     }
 
-    if (watercount >= maxcount) {
-      overWater = true;
-      errorMillis = currentMillis;
-      Serial.println("!!!OverWatering!!!!");
-    }
-
     if ((sensorMapValue < hysLow || hysteresis == true)  && recentWater == false) {
       Serial.print("Watering...");
-      if (sensorMapValue < hysHigh)
-        hysteresis = true;
-      else
-        hysteresis = false;
-      Serial.print("hysteresis = ");
-      Serial.println(hysteresis);
       // turn valve on as soil is dry:
       digitalWrite(valveOut, HIGH);
       delay(watertime);
@@ -165,6 +162,20 @@ void SerialOutput() {
     Serial.print("  xWat(.ok.): ");
   }
   Serial.println(watercount);
+}
+
+
+void HysteresisCheck() {
+  if (sensorMapValue < hysLow) {
+    hysteresis = true;
+    Serial.print("hysteresis = ");
+    Serial.println(hysteresis);
+  }
+  else if (sensorMapValue > hysHigh) {
+    hysteresis = false;
+    Serial.print("hysteresis = ");
+    Serial.println(hysteresis);
+  }
 }
 
 

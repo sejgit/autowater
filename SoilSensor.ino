@@ -166,12 +166,12 @@ void SerialOutput() {
 
 
 void HysteresisCheck() {
-  if (sensorMapValue < hysLow) {
+  if ((sensorMapValue < hysLow) && (hysteresis == false)) {
     hysteresis = true;
     Serial.print("hysteresis = ");
     Serial.println(hysteresis);
   }
-  else if (sensorMapValue > hysHigh) {
+  else if ((sensorMapValue > hysHigh) && (hysteresis ==true)) {
     hysteresis = false;
     Serial.print("hysteresis = ");
     Serial.println(hysteresis);

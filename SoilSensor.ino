@@ -98,7 +98,7 @@ void loop() {
     SerialOutput();
   }
 
-  if (watercount >= maxcount) {
+  if ((watercount >= maxcount) && (overWater == false)) {
     overWater = true;
     errorMillis = currentMillis;
     Serial.println("!!!OverWatering!!!!");

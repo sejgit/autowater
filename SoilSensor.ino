@@ -5,7 +5,7 @@
   16 Oct 2016 SeJ update to add timed watering
   07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
   08 Nov 2016 SeJ/CsJ update to change error mode to self-reset
-  13 Nov 2016 SeJ hysteresis and various reporting improvements
+  13 Nov 2016 SeJ hysteresis, comments, reporting improvements
 
   not using digital output on sensor for now
   using analog soil sensor and outputing level to five digital leds
@@ -64,7 +64,7 @@ const long wateringcycle = 3600000; //60 * 60 * 1000 = 1hr wateringcylce duratio
 
 void SensorRead();
 void SerialOutput();
-void LedOutput(unsigned long currentMillis);
+void LedOutput();
 void HysteresisCheck();
 
 void setup() {
@@ -100,19 +100,22 @@ void setup() {
 
   SensorRead();
   SerialOutput();
-  LedOutput(0);
+  LedOutput();
 
 }
 
 
 void loop() {
 
+  // set now
   currentMillis = millis();
 
+  // read soilSensor update leds & update hysteresis
   SensorRead();
-  LedOutput(currentMillis);
+  LedOutput();
   HysteresisCheck();
 
+  // update data output every so often but not too often
   if ((sensorMapValue != sensorMapValue_old) && (sensorMapValue != sensorMapValue_old2) && (currentMillis - outputMillis >= heartbeat)) {
     outputMillis = currentMillis;
     sensorMapValue_old2 = sensorMapValue_old;
@@ -120,11 +123,14 @@ void loop() {
     SerialOutput();
   }
 
+  // set up timing for waterings based on interval
   if (currentMillis - prevWater >= interval) {
     prevWater = currentMillis;
     recentWater = false;
     SerialOutput();
   }
+
+  // manual watering LOW=pushed make sure only once per push & only watertime + heartbeat so often
   if (digitalRead(manButton) == LOW) {
     if (manSet == false && manReset == false) manSet = true;
     if (currentMillis - manMillis >= (watertime + heartbeat)) manReset = false;
@@ -137,18 +143,24 @@ void loop() {
     }
   }
 
+  // main watering only if not overwater or if manual
   if (overWater == false || manWater == true) {
+    // reset watercount after wateringcycle elapsed
     if (currentMillis - waterMillis >= wateringcycle) {
       watercount = 0;
       waterMillis = currentMillis;
     }
 
+    // ready to water if all is ok
     if (manWater == true || (hysteresis == true && recentWater == false)) {
+      // turn on valve for watering time and set recent flag
       Serial.print("Watering...");
-      digitalWrite(valveOut, HIGH);        // turn valve on as soil is dry:
+      digitalWrite(valveOut, HIGH);
       delay(watertime);
       digitalWrite(valveOut, LOW);
       recentWater = true;
+
+      // if manual reset some flages if auto increase the count
       if (manWater == true) {
 	manWater = false;
 	hysteresis = false;
@@ -159,6 +171,7 @@ void loop() {
         Serial.println("Done Auto Watering.");
       }
 
+      // set timing of first watering in cycle or set overwatering or pass
       if (watercount <= 1) {
         waterMillis = currentMillis;
       } else if (watercount >= maxcount) {
@@ -166,21 +179,22 @@ void loop() {
 	errorMillis = currentMillis;
       }
 
+      // update the data stream
       SerialOutput();
 
     } else {
-      digitalWrite(valveOut, LOW);        // failsafe turn off valve as soil is wet:
+      // failsafe turn off valve if we are not turning it on
+      digitalWrite(valveOut, LOW);
     }
 
   } else {
+    // reset overwater after watering cycle has timed out
     if (currentMillis - errorMillis >= wateringcycle) {
       overWater = false;
       }
   }
 
-  // wait 2(ed 4) milliseconds before the next loop
-  // for the analog-to-digital converter to settle
-  // after the last reading:
+  // wait 4 mills for the analog-to-digital converter to settle after the last reading:
   delay(4);
 }
 
@@ -200,6 +214,7 @@ void SerialOutput() {
   Serial.print(sensorMapValue);
   Serial.print("  dig:");
   Serial.print(soilState);
+  // time to reset overWater or hysteresis on or ok
   if (overWater == true) {
     overDeltaMillis = ((currentMillis - errorMillis) / 60000);
     Serial.print("  xWat(OVER=");
@@ -210,11 +225,13 @@ void SerialOutput() {
   } else {
     Serial.print("  xWat(...ok...): ");
   }
+  // finally print the watercount
   Serial.println(watercount);
 }
 
 
 void HysteresisCheck() {
+  // setting of hysteresis when moisture is below hysLow, reset above hysHigh
   if ((sensorMapValue < hysLow) && (hysteresis == false)) {
     hysteresis = true;
   }
@@ -224,7 +241,7 @@ void HysteresisCheck() {
 }
 
 
-void LedOutput(unsigned long currentMillis) {
+void LedOutput() {
   if (overWater == true) {
     if (currentMillis - flashMillis >= heartbeat) {
       flashMillis = currentMillis;

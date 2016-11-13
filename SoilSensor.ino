@@ -44,12 +44,14 @@ int manSet = false;        // manual button set
 int manReset = false;      // manual button reset
 int manWater = false;      // manual water flag
 
-
+unsigned long currentMillis = 0;    // current timestamp
 unsigned long prevWater = 0;        // previous watering timestamp
 unsigned long waterMillis = 0;      // timestamp for watering
 unsigned long flashMillis = 0;      // timestamp for led flash
 unsigned long errorMillis = 0;      // timestamp to reset overwater condition
 unsigned long outputMillis = 0;     // timestamp to throttle data output
+unsigned long manMillis = 0;        // timestamp to delay manual watering
+unsigned long overDeltaMillis = 0;  // delta until overwater is done
 
 const int hysLow = 40;         // hysteresis low
 const int hysHigh = 60;       // hysteresis high
@@ -74,13 +76,11 @@ void setup() {
   pinMode(ledG3, OUTPUT);
   pinMode(ledYel, OUTPUT);
   pinMode(ledRed, OUTPUT);
-  pinMode(manButton, INPUT);  // init manual watering button
+  pinMode(manButton, INPUT_PULLUP);  // init manual watering button
 
   watercount = 0;       // reset watercount
   overWater = false;    // reset overWatering
   recentWater = false;  // flag for recent water
-  watercount = 0;       // number of times watered during wateringcyle
-  overWater = false;    // flag for overwatering within watercyle
   hysteresis = false;   // flag for hysteresis watering
   manSet = false;        // manual button set
   manReset = false;      // manual button reset
@@ -90,6 +90,7 @@ void setup() {
   waterMillis = 0;      // timestamp for watering
   errorMillis = 0;      // timestamp to reset overwater condition
   outputMillis = 0;     // timestamp to throttle data output
+  manMillis = 0;        // timestamp to delay manual watering
 
   delay(10);
   Serial.println("...");
@@ -106,7 +107,7 @@ void setup() {
 
 void loop() {
 
-  unsigned long currentMillis = millis();
+  currentMillis = millis();
 
   SensorRead();
   LedOutput(currentMillis);
@@ -124,11 +125,17 @@ void loop() {
     recentWater = false;
     SerialOutput();
   }
-
-  /*
-  if(
-
-  */
+  if (digitalRead(manButton) == LOW) {
+    if (manSet == false && manReset == false) manSet = true;
+    if (currentMillis - manMillis >= (watertime + heartbeat)) manReset = false;
+  } else {
+    if (manSet == true && manReset == false) {
+    manSet = false;
+    manReset = true;
+    manWater = true;
+    manMillis = currentMillis;
+    }
+  }
 
   if (overWater == false || manWater == true) {
     if (currentMillis - waterMillis >= wateringcycle) {
@@ -193,7 +200,10 @@ void SerialOutput() {
   Serial.print("  dig:");
   Serial.print(soilState);
   if (overWater == true) {
-    Serial.print("  xWat(!!OVER!!): ");
+    overDeltaMillis = ((currentMillis - errorMillis) / 60000);
+    Serial.print("  xWat(OVER=");
+    Serial.print(overDeltaMillis);
+    Serial.print("m): ");
   } else if (hysteresis == true) {
     Serial.print("  xWat(hysteres): ");
   } else {

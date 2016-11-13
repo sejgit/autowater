@@ -5,19 +5,23 @@
   16 Oct 2016 SeJ update to add timed watering
   07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
   08 Nov 2016 SeJ/CsJ update to change error mode to self-reset
+  13 Nov 2016 SeJ hysteresis and various reporting improvements
 
-  using digital / analog soil sensor and outputing level to five digital leds
-  sends the value to console
+  not using digital output on sensor for now
+  using analog soil sensor and outputing level to five digital leds
+  sends the value to console (have a receiving python on rasp-pi)
   Valve operation have somee safeguards to not over water.
 
   todo:
-  Will perhaps add a level sensor for the filling water tank.
-
+  - perhaps add a level sensor for the filling water tank.
+  - sensor at base for overfilling flower pot
+  - picture from pi to check out status
  */
 
 const int analogInPin = A0; // Analog input pin that the potentiometer is attached to
 const int soilPin = 12;     // soilsensor digital output -> 12 input
 const int valveOut =  13;   // valve output
+const int manButton = 9;    // manual water button
 
 const int ledG1 = 6;  // indicator leds
 const int ledG2 = 5;
@@ -35,6 +39,10 @@ int watercount = 0;         // number of times watered during wateringcyle
 int overWater = false;      // flag for overwatering within watercyle
 int flash = false;          // flag for flashing error light
 int hysteresis = false;     // flag for hysteresis watering
+
+int manSet = false;        // manual button set
+int manReset = false;      // manual button reset
+int manWater = false;      // manual water flag
 
 
 unsigned long prevWater = 0;        // previous watering timestamp
@@ -66,9 +74,28 @@ void setup() {
   pinMode(ledG3, OUTPUT);
   pinMode(ledYel, OUTPUT);
   pinMode(ledRed, OUTPUT);
+  pinMode(manButton, INPUT);  // init manual watering button
 
-  watercount = 0;  // reset watercount
-  overWater = false;  // reset overWatering
+  watercount = 0;       // reset watercount
+  overWater = false;    // reset overWatering
+  recentWater = false;  // flag for recent water
+  watercount = 0;       // number of times watered during wateringcyle
+  overWater = false;    // flag for overwatering within watercyle
+  hysteresis = false;   // flag for hysteresis watering
+  manSet = false;        // manual button set
+  manReset = false;      // manual button reset
+  manWater = false;      // manual water flag
+
+  prevWater = 0;        // previous watering timestamp
+  waterMillis = 0;      // timestamp for watering
+  errorMillis = 0;      // timestamp to reset overwater condition
+  outputMillis = 0;     // timestamp to throttle data output
+
+  delay(10);
+  Serial.println("...");
+  Serial.println("Resetting System...");
+  Serial.println("...");
+  delay(10);
 
   SensorRead();
   SerialOutput();
@@ -98,34 +125,43 @@ void loop() {
     SerialOutput();
   }
 
-  if ((watercount >= maxcount) && (overWater == false)) {
-    overWater = true;
-    errorMillis = currentMillis;
-    Serial.println("!!!OverWatering!!!!");
-  }
+  /*
+  if(
 
-  if (overWater == false) {
+  */
+
+  if (overWater == false || manWater == true) {
     if (currentMillis - waterMillis >= wateringcycle) {
       watercount = 0;
       waterMillis = currentMillis;
     }
 
-    if ((sensorMapValue < hysLow || hysteresis == true)  && recentWater == false) {
+    if (manWater == true || (hysteresis == true && recentWater == false)) {
       Serial.print("Watering...");
-      // turn valve on as soil is dry:
-      digitalWrite(valveOut, HIGH);
+      digitalWrite(valveOut, HIGH);        // turn valve on as soil is dry:
       delay(watertime);
       digitalWrite(valveOut, LOW);
       Serial.println("Done Watering.");
       recentWater = true;
-      watercount++;
-      Serial.println(watercount);
+      if (manWater == true) {
+	manWater = false;
+	hysteresis = false;
+	overWater = false;
+      } else {
+	watercount++;
+      }
+
       if (watercount <= 1) {
         waterMillis = currentMillis;
+      } else if (watercount >= maxcount) {
+	overWater = true;
+	errorMillis = currentMillis;
       }
+
+      SerialOutput();
+
     } else {
-      // failsafe turn off valve as soil is wet:
-      digitalWrite(valveOut, LOW);
+      digitalWrite(valveOut, LOW);        // failsafe turn off valve as soil is wet:
     }
 
   } else {
@@ -157,9 +193,11 @@ void SerialOutput() {
   Serial.print("  dig:");
   Serial.print(soilState);
   if (overWater == true) {
-    Serial.print("  xWat(!nok!: ");
+    Serial.print("  xWat(!!OVER!!): ");
+  } else if (hysteresis == true) {
+    Serial.print("  xWat(hysteres): ");
   } else {
-    Serial.print("  xWat(.ok.): ");
+    Serial.print("  xWat(...ok...): ");
   }
   Serial.println(watercount);
 }
@@ -168,13 +206,9 @@ void SerialOutput() {
 void HysteresisCheck() {
   if ((sensorMapValue < hysLow) && (hysteresis == false)) {
     hysteresis = true;
-    Serial.print("hysteresis = ");
-    Serial.println(hysteresis);
   }
   else if ((sensorMapValue > hysHigh) && (hysteresis ==true)) {
     hysteresis = false;
-    Serial.print("hysteresis = ");
-    Serial.println(hysteresis);
   }
 }
 

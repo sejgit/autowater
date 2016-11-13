@@ -127,7 +127,7 @@ void loop() {
   if (currentMillis - prevWater >= interval) {
     prevWater = currentMillis;
     recentWater = false;
-    SerialOutput();
+    // SerialOutput();
   }
 
   // manual watering LOW=pushed make sure only once per push & only watertime + heartbeat so often

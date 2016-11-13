@@ -148,14 +148,15 @@ void loop() {
       digitalWrite(valveOut, HIGH);        // turn valve on as soil is dry:
       delay(watertime);
       digitalWrite(valveOut, LOW);
-      Serial.println("Done Watering.");
       recentWater = true;
       if (manWater == true) {
 	manWater = false;
 	hysteresis = false;
 	overWater = false;
+        Serial.println("Done Manual Watering.");
       } else {
 	watercount++;
+        Serial.println("Done Auto Watering.");
       }
 
       if (watercount <= 1) {

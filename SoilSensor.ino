@@ -125,7 +125,7 @@ void loop() {
 
   // set up timing for waterings based on interval
   if (currentMillis - prevWater >= interval) {
-    prevWater = currentMillis;
+    // prevWater = currentMillis;
     recentWater = false;
     // SerialOutput();
   }
@@ -159,6 +159,7 @@ void loop() {
       delay(watertime);
       digitalWrite(valveOut, LOW);
       recentWater = true;
+      prevWater = currentMillis;
 
       // if manual reset some flages if auto increase the count
       if (manWater == true) {

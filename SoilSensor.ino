@@ -125,9 +125,7 @@ void loop() {
 
   // set up timing for waterings based on interval
   if (currentMillis - prevWater >= interval) {
-    // prevWater = currentMillis;
     recentWater = false;
-    // SerialOutput();
   }
 
   // manual watering LOW=pushed make sure only once per push & only watertime + heartbeat so often
@@ -177,6 +175,7 @@ void loop() {
         waterMillis = currentMillis;
       } else if (watercount >= maxcount) {
 	overWater = true;
+	hysteresis = false;
 	errorMillis = currentMillis;
       }
 
@@ -217,7 +216,7 @@ void SerialOutput() {
   Serial.print(soilState);
   // time to reset overWater or hysteresis on or ok
   if (overWater == true) {
-    overDeltaMillis = ((currentMillis - errorMillis) / 60000);
+    overDeltaMillis = ((wateringcycle - (currentMillis - errorMillis)) / 60000);
     Serial.print("  xWat(OVER=");
     Serial.print(overDeltaMillis);
     Serial.print("m): ");

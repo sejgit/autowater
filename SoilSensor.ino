@@ -6,6 +6,7 @@
   07 Nov 2016 SeJ/CsJ update to add PI monitoring & calibrate
   08 Nov 2016 SeJ/CsJ update to change error mode to self-reset
   13 Nov 2016 SeJ hysteresis, comments, reporting improvements
+  27 Nov 2016 SeJ manual watering button to reset counter & change flash on overwater
 
   not using digital output on sensor for now
   using analog soil sensor and outputing level to five digital leds
@@ -16,6 +17,7 @@
   - perhaps add a level sensor for the filling water tank.
   - sensor at base for overfilling flower pot
   - picture from pi to check out status
+  - water more than one plant
  */
 
 const int analogInPin = A0; // Analog input pin that the potentiometer is attached to
@@ -144,7 +146,7 @@ void loop() {
   // main watering only if not overwater or if manual
   if (overWater == false || manWater == true) {
     // reset watercount after wateringcycle elapsed
-    if (currentMillis - waterMillis >= wateringcycle) {
+    if ((currentMillis - waterMillis >= wateringcycle)) {
       watercount = 0;
       waterMillis = currentMillis;
     }
@@ -164,6 +166,7 @@ void loop() {
 	manWater = false;
 	hysteresis = false;
 	overWater = false;
+	watercount = 0;
         Serial.println("Done Manual Watering.");
       } else {
 	watercount++;
@@ -253,12 +256,42 @@ void LedOutput() {
         digitalWrite(ledRed, HIGH);
         flash = false;
       } else {
-        digitalWrite(ledG1, HIGH);
-        digitalWrite(ledG2, HIGH);
-        digitalWrite(ledG3, HIGH);
-        digitalWrite(ledYel, HIGH);
-        digitalWrite(ledRed, LOW);
-        flash = true;
+	if (sensorMapValue >= 80) {
+          digitalWrite(ledG1, LOW);
+          digitalWrite(ledG2, LOW);
+          digitalWrite(ledG3, LOW);
+          digitalWrite(ledYel, LOW);
+          digitalWrite(ledRed, LOW);
+        }
+        if (sensorMapValue >= 60 && sensorMapValue < 80) {
+          digitalWrite(ledG1, HIGH);
+          digitalWrite(ledG2, LOW);
+          digitalWrite(ledG3, LOW);
+          digitalWrite(ledYel, LOW);
+          digitalWrite(ledRed, LOW);
+        }
+        if (sensorMapValue >= 40 && sensorMapValue < 60) {
+          digitalWrite(ledG1, HIGH);
+          digitalWrite(ledG2, HIGH);
+          digitalWrite(ledG3, LOW);
+          digitalWrite(ledYel, LOW);
+          digitalWrite(ledRed, LOW);
+        }
+        if (sensorMapValue >= 20 && sensorMapValue < 40) {
+          digitalWrite(ledG1, HIGH);
+          digitalWrite(ledG2, HIGH);
+          digitalWrite(ledG3, HIGH);
+          digitalWrite(ledYel, LOW);
+          digitalWrite(ledRed, LOW);
+        }
+        if (sensorMapValue < 20) {
+          digitalWrite(ledG1, HIGH);
+          digitalWrite(ledG2, HIGH);
+          digitalWrite(ledG3, HIGH);
+          digitalWrite(ledYel, HIGH);
+          digitalWrite(ledRed, LOW);
+        }
+	flash = true;
       }
     }
   } else {

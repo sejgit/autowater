@@ -1,4 +1,5 @@
 # autowater
+** note: no continued development
 arduino &amp; pi autowatering
 
 arduino winter auto-watering program
